@@ -73,27 +73,70 @@ clicked.set(categoryList[0])
 drop = OptionMenu(root, clicked, *categoryList)
 drop.config(width=37, bg="#ffe6a1",fg="black",font=("Calibri 11"), anchor="w", borderwidth=2)
 drop.grid(row=6,column=1)
+itemsList = []
+
+categoryPriceList=[]
+def get_total_price (category):
+    c.execute("SELECT price FROM financial_info2 WHERE category=:category", {'category':category})
+    return c.fetchall()
 
 def myClick():
     inputName = eName.get()
-    inputPrice = ePrice.get()
+    inputPrice = ePrice.get()[1:]
     inputCat = clicked.get()
     itemLabel = Expenses(inputName,inputPrice,inputCat)
-    print(itemLabel)
     insert_item (itemLabel)
+
+    itemListLabel=inputName+", $"+inputPrice+", "+inputCat
+    itemsList.append(itemListLabel)
+    for i in range (0,len(itemsList)):
+        listLabel = Label(root, text=itemsList[i],anchor="w",width=33,font=("Calibri 11")).grid(row=11+i,column=1)
+    
     eName.delete(0,END)
     ePrice.delete(0,END)
-    c.execute("SELECT * FROM financial_info2")
-    print(c.fetchall())
+    ePrice.insert(0,"$")
+
     # inputName.grid(row=1,column=2)
     # inputPrice.grid(row=2,column=2)
     # inputCat.grid(row=3, column=2)
-    
+
+def doneClick():
+    print(itemsList)
+    c.execute("SELECT * FROM financial_info2")
+    print(c.fetchall())
+
+    for i in range (0,len(categoryList)):
+        categorySum = 0
+        for j in range (0,len(get_total_price(categoryList[i]))):
+            categorySum+=get_total_price(categoryList[i])[j][0]
+        categoryPriceList.append(categoryList[i]+": $"+str(round(categorySum,2)))
+    print(categoryPriceList)
+    for i in range(0,round(len(categoryPriceList)/2)):
+        dollarIndex = categoryPriceList[i].index("$")
+        catPriceLabel = Label(root, text=categoryPriceList[i][dollarIndex:], font=("Calibri 13"),anchor="w", width=9)
+        catPriceLabel.grid(row=i+1,column=6)
+
+    for i in range(round(len(categoryPriceList)/2),len(categoryPriceList)):
+        dollarIndex = categoryPriceList[i].index("$")
+        catPriceLabel = Label(root, text=categoryPriceList[i][dollarIndex:], font=("Calibri 13"),anchor="w", width=9)
+        catPriceLabel.grid(row=i+1-round(len(categoryPriceList)/2),column=8)
+
+
+    #for j in range (0, len(categoryPriceList)):
+
 #submit button
 labelRow = Label(root, text=" ",pady=6).grid(row=7,column=1)
-submitButton=Button(root, text="Submit", padx=11,pady=5, font=("Calibri 11"),command=myClick, fg="black", bg="white")
+submitButton=Button(root, text="Submit", padx=11,pady=3, font=("Calibri 11"),command=myClick, fg="black", bg="white")
 submitButton.grid(row=8,column=1)
+labelRow = Label(root, text=" ",pady=6).grid(row=9,column=1)
 
+#empty rows
+for i in range (0, len(itemsList)+1):
+    emptyRow = Label(root, text=" ",pady=6).grid(row=17+i,column=1)
+
+#done button
+doneButton=Button(root, text="Done", padx=11,pady=3, font=("Calibri 11"),command=doneClick, fg="black", bg="white")
+doneButton.grid(row=17+len(itemsList)+1,column=1)
 
 labelEmpty = Label(root, text="    ",font=("Calibri 18"),padx=6).grid(row=0,column=4)
 
